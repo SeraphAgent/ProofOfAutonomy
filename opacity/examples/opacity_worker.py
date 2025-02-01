@@ -83,7 +83,9 @@ class OpacityVerificationWorker:
     def _initialize_verified_agents(self):
         """Initialize tracking of verified agents."""
         self.verified_agents_file = "verified_agents.txt"
+        self.verified_tweets_file = "verified_tweets.txt"
         self.verified_agents = self._load_verified_agents()
+        self.verified_tweets = self._load_verified_tweets()
 
     def _get_state(
         self,
@@ -115,6 +117,30 @@ class OpacityVerificationWorker:
             return True
         except Exception as e:
             print(f"[ERROR] Failed to save verified agent: {e}")
+            return False
+        
+    def _load_verified_tweets(self) -> set:
+        """Load previously verified tweet IDs from file."""
+        try:
+            if os.path.exists(self.verified_tweets_file):
+                with open(self.verified_tweets_file, 'r') as f:
+                    return set(line.strip() for line in f)
+            return set()
+        except Exception as e:
+            print(f"Error loading verified tweets: {e}")
+            return set()
+
+    def _save_verified_tweet(self, tweet_id: str) -> bool:
+        """Save verified tweet ID to file. Returns True if tweet was newly added."""
+        try:
+            if tweet_id in self.verified_tweets:
+                return False
+            with open(self.verified_tweets_file, 'a') as f:
+                f.write(f"{tweet_id}\n")
+            self.verified_tweets.add(tweet_id)
+            return True
+        except Exception as e:
+            print(f"[ERROR] Failed to save verified tweet: {e}")
             return False
 
     def _extract_wallet_address(self, tweet_text: str) -> Optional[str]:
@@ -268,9 +294,9 @@ class OpacityVerificationWorker:
                 trust_url = get_scan_url(trust_tx)
                 print(f"[TRUST] Bought trust: {trust_url}")
                 
-                base_message = f"[SUCCESS] First verification\n└─ Proof {proof_id}"
+                base_message = f"[SUCCESS] Agent verified by Seraph x Opacity\n└─ Proof {proof_id}"
                 if trust_url:
-                    base_message += f"\n└─ Trust tx: {trust_url}"
+                    base_message += f"\n└─ Trust initialized: {trust_url}"
 
                 if wallet_address:
                     try:
@@ -280,7 +306,7 @@ class OpacityVerificationWorker:
                             print(f"[SERAPH] Transferred to {wallet_address}: {seraph_url}")
                             return (
                                 f"{base_message}\n"
-                                f"└─ SERAPH: 1.0 → {wallet_address}\n"
+                                f"└─ Welcome reward: 1.0 SERAPH → {wallet_address}\n"
                                 f"└─ Transfer tx: {seraph_url}"
                             )
                     except Exception as e:
@@ -291,26 +317,26 @@ class OpacityVerificationWorker:
                 trust_tx = buy_trust()
                 trust_url = get_scan_url(trust_tx)
                 print(f"[TRUST] Bought trust: {trust_url}")
-                base_message = f"[SUCCESS] Reverification\n└─ Proof {proof_id}"
+                base_message = f"[SUCCESS] Trust strengthened\n└─ Verifiable inference proof {proof_id}"
                 if trust_url:
-                    base_message += f"\n└─ Trust tx: {trust_url}"
+                    base_message += f"\n└─ Trust reinforced: {trust_url}"
                 return base_message
         else:
             if not is_previously_verified:
                 distrust_tx = buy_distrust()
                 distrust_url = get_scan_url(distrust_tx)
-                print(f"[DISTRUST] Bought distrust: {distrust_url}")
-                base_message = f"[FAILED] Verification\n└─ Proof {proof_id}"
+                print(f"[DISTRUST] Invalid inference detected: {distrust_url}")
+                base_message = f"[FAILED] Invalid inference detected\n└─ Proof {proof_id}"
                 if distrust_url:
-                    base_message += f"\n└─ Distrust tx: {distrust_url}"
+                    base_message += f"\n└─ Distrust signal: {distrust_url}"
                 return base_message
             else:
                 trust_tx = sell_trust()
                 trust_url = get_scan_url(trust_tx)
                 print(f"[TRUST] Sold trust: {trust_url}")
-                base_message = f"[FAILED] Verification\n└─ Proof {proof_id}"
+                base_message = f"[FAILED] Trust diminished\n└─ Proof {proof_id}"
                 if trust_url:
-                    base_message += f"\n└─ Trust sold tx: {trust_url}"
+                    base_message += f"\n└─ Trust withdrawn: {trust_url}"
                 return base_message
     
     def verify_tweet_thread(self, tweet_id: str) -> tuple:
@@ -318,6 +344,36 @@ class OpacityVerificationWorker:
         try:
             if not tweet_id or not isinstance(tweet_id, str):
                 return FunctionResultStatus.FAILED, "Invalid tweet ID provided", {}
+            
+            try:
+                original_tweet = self._get_original_tweet(tweet_id)
+                if not original_tweet:
+                    return FunctionResultStatus.FAILED, "Could not retrieve original tweet", {}
+            except Exception as e:
+                return FunctionResultStatus.FAILED, f"Error retrieving tweet: {str(e)}", {}
+            
+            original_tweet_id = original_tweet['id']
+            if original_tweet_id in self.verified_tweets:
+                try:
+                    author_data = self.twitter_plugin.twitter_client.get_user(id=original_tweet['author_id'])
+                    author_username = author_data.data.username
+                except Exception as e:
+                    author_username = original_tweet['author_id']
+                    
+                reply_tweet_fn = self.twitter_plugin.get_function('reply_tweet')
+                
+                if tweet_id != original_tweet_id:
+                    reply_text = f"@{author_username} [INFO] Tweet already verified\n└─ Original tweet: {original_tweet_id}"
+                else:
+                    reply_text = f"[INFO] Tweet already verified"
+                    
+                reply_tweet_fn(tweet_id, reply_text)
+                
+                return (
+                    FunctionResultStatus.DONE,
+                    "Tweet was previously verified",
+                    {"original_tweet_id": original_tweet_id}
+                )
 
             reply_tweet = self._get_tweet_data(tweet_id)
             if not reply_tweet or not reply_tweet.data:
@@ -325,13 +381,6 @@ class OpacityVerificationWorker:
 
             reply_text = reply_tweet.data.text
             wallet_address = self._extract_wallet_address(reply_text)
-
-            try:
-                original_tweet = self._get_original_tweet(tweet_id)
-                if not original_tweet:
-                    return FunctionResultStatus.FAILED, "Could not retrieve original tweet", {}
-            except Exception as e:
-                return FunctionResultStatus.FAILED, f"Error retrieving tweet: {str(e)}", {}
 
             original_tweet_author = original_tweet['author_id']
             # Check if author is already verified before proceeding
@@ -366,9 +415,10 @@ class OpacityVerificationWorker:
                     {"proof": proof_response.json()}
                 )
 
-                # Only save if verification successful and not previously verified
-                if verification_result and not is_previously_verified:
-                    self._save_verified_agent(str(original_tweet_author))
+                # Save tweet ID if verification is successful
+                if verification_result:
+                    self._save_verified_tweet(original_tweet_id)
+
 
                 return self._handle_verification_response(
                     verification_result,
@@ -427,7 +477,7 @@ class OpacityVerificationWorker:
 
 def main():
     worker = OpacityVerificationWorker()
-    test_tweet_id = 1885775347679138028
+    test_tweet_id = 1885819053702594995
     worker.run(test_tweet_id)
 
 
