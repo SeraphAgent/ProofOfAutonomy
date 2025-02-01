@@ -12,6 +12,15 @@ import re
 import requests
 from opacity_game_sdk.opacity_plugin import OpacityPlugin
 from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin
+import sys
+sys.path.append('/home/user/CoinbaseAI/ethos-trade-cdp/py')
+from main import (
+    buy_trust,
+    sell_trust,
+    buy_distrust,
+    sell_distrust,
+    transfer_seraph
+)
 
 
 class OpacityVerificationWorker:
@@ -64,86 +73,127 @@ class OpacityVerificationWorker:
             }
             self.twitter_plugin = TwitterPlugin(twitter_options)
 
+            # Initialize verified agents tracking
+            self.verified_agents_file = "verified_agents.txt"
+            self.verified_agents = self._load_verified_agents()
+
         except Exception as e:
             raise RuntimeError(f"Failed to initialize Twitter plugin: {str(e)}")
 
         self.worker = self._create_worker()
 
-    def _get_state(self, function_result: FunctionResult,
-                   current_state: dict) -> dict:
+    def _get_state(
+        self,
+        function_result: FunctionResult,
+        current_state: dict
+    ) -> dict:
         """Simple state management"""
         return {}
+
+    def _load_verified_agents(self) -> set:
+        """Load previously verified agents from file"""
+        try:
+            if os.path.exists(self.verified_agents_file):
+                with open(self.verified_agents_file, 'r') as f:
+                    return set(line.strip() for line in f)
+            return set()
+        except Exception as e:
+            print(f"Error loading verified agents: {e}")
+            return set()
+
+    def _save_verified_agent(self, agent_id: str):
+        """Save newly verified agent to file"""
+        try:
+            with open(self.verified_agents_file, 'a') as f:
+                f.write(f"{agent_id}\n")
+            self.verified_agents.add(agent_id)
+        except Exception as e:
+            print(f"Error saving verified agent: {e}")
+
+    def _extract_wallet_address(self, tweet_text: str) -> Optional[str]:
+        """Extract Ethereum wallet address from tweet text"""
+        try:
+            # Look for wallet address with common prefixes
+            patterns = [
+                r'wallet address:\s*(0x[a-fA-F0-9]{40})',  # "wallet address: 0x..."
+                r'address:\s*(0x[a-fA-F0-9]{40})',         # "address: 0x..."
+                r'(0x[a-fA-F0-9]{40})'                     # just the address
+            ]
+            
+            for pattern in patterns:
+                match = re.search(pattern, tweet_text, re.IGNORECASE)
+                if match:
+                    return match.group(1)
+            
+            return None
+        except Exception as e:
+            print(f"Error extracting wallet address: {e}")
+            return None
 
     def _get_original_tweet(self, tweet_id: str) -> Optional[Dict]:
         """Get the original (root) tweet of a thread"""
         try:
+            tweet_fields = [
+                'conversation_id',
+                'referenced_tweets',
+                'text',
+                'author_id'
+            ]
+            expansions = ['referenced_tweets.id']
+
             current_tweet = self.twitter_plugin.twitter_client.get_tweet(
                 tweet_id,
-                tweet_fields=['conversation_id', 'referenced_tweets', 'text'],
-                expansions=['referenced_tweets.id']
+                tweet_fields=tweet_fields,
+                expansions=expansions
             )
 
             if not current_tweet or not current_tweet.data:
                 raise ValueError(f"Tweet with ID {tweet_id} not found")
 
-            # If no referenced tweets, this is the original
-            if not hasattr(current_tweet.data, 'referenced_tweets'):
+            # If this is the original tweet (no referenced tweets)
+            referenced_tweets = getattr(current_tweet.data, 'referenced_tweets', None)
+            if not referenced_tweets:
                 return {
                     'id': str(current_tweet.data.id),
-                    'text': current_tweet.data.text
+                    'text': current_tweet.data.text,
+                    'author_id': current_tweet.data.author_id
                 }
 
-            # Follow the chain of replies to the original tweet
-            while True:
-                referenced_tweets = current_tweet.data.referenced_tweets
-                if not referenced_tweets:
-                    return {
-                        'id': str(current_tweet.data.id),
-                        'text': current_tweet.data.text
-                    }
-
-                # Look for the 'replied_to' reference
+            # Follow the chain to find the original tweet
+            while referenced_tweets:
                 parent_ref = next(
-                    (ref for ref in referenced_tweets if ref.type == 'replied_to'),
+                    (ref for ref in current_tweet.data.referenced_tweets
+                     if ref.type == 'replied_to'),
                     None
                 )
 
-                # If no parent found, we've reached the original tweet
                 if not parent_ref:
-                    return {
-                        'id': str(current_tweet.data.id),
-                        'text': current_tweet.data.text
-                    }
+                    break
 
-                # Get the parent tweet
                 current_tweet = self.twitter_plugin.twitter_client.get_tweet(
                     str(parent_ref.id),
-                    tweet_fields=['conversation_id', 'referenced_tweets', 'text'],
-                    expansions=['referenced_tweets.id']
+                    tweet_fields=tweet_fields,
+                    expansions=expansions
                 )
 
                 if not current_tweet or not current_tweet.data:
-                    return None
+                    break
+                
+                referenced_tweets = getattr(current_tweet.data, 'referenced_tweets', None)
+
+            return {
+                'id': str(current_tweet.data.id),
+                'text': current_tweet.data.text,
+                'author_id': current_tweet.data.author_id
+            }
 
         except Exception as e:
-            error_msg = str(e).lower()
-            if "unauthorized" in error_msg:
-                raise RuntimeError(
-                    "Twitter API authentication failed. Please check your credentials."
-                )
-            elif "not found" in error_msg:
-                raise ValueError(f"Tweet with ID {tweet_id} does not exist")
-            elif "forbidden" in error_msg:
-                raise RuntimeError(
-                    "Twitter API access forbidden. Please check API permissions."
-                )
-            else:
-                raise RuntimeError(f"Error accessing tweet: {str(e)}")
+            print(f"Error in _get_original_tweet: {e}")
+            raise
 
     def _extract_proof_from_tweet(self, tweet_text: str) -> Optional[Dict]:
         """Extract proof ID from tweet text"""
         try:
-            # Debug log
             print(f"Attempting to extract proof from tweet text: {tweet_text}")
 
             # Look for proof ID at the end of the tweet
@@ -154,10 +204,10 @@ class OpacityVerificationWorker:
             )
             if proof_match:
                 proof_id = proof_match.group(1)
-                print(f"Found proof ID: {proof_id}")  # Debug log
+                print(f"Found proof ID: {proof_id}")
                 return {"proof_id": proof_id}
 
-            print("No proof ID found in tweet text")  # Debug log
+            print("No proof ID found in tweet text")
             return None
         except Exception as e:
             print(f"Error extracting proof ID: {e}")
@@ -168,11 +218,26 @@ class OpacityVerificationWorker:
         try:
             # Input validation
             if not tweet_id or not isinstance(tweet_id, str):
+                return FunctionResultStatus.FAILED, "Invalid tweet ID provided", {}
+
+            # Get the reply tweet first (the one with the wallet address)
+            reply_tweet = self.twitter_plugin.twitter_client.get_tweet(
+                tweet_id,
+                tweet_fields=['text', 'author_id', 'referenced_tweets'],
+                expansions=['referenced_tweets.id']
+            )
+
+            if not reply_tweet or not reply_tweet.data:
                 return (
                     FunctionResultStatus.FAILED,
-                    "Invalid tweet ID provided",
+                    "Could not retrieve reply tweet",
                     {}
                 )
+
+            reply_text = reply_tweet.data.text
+            print(f"Reply tweet text: {reply_text}")
+            wallet_address = self._extract_wallet_address(reply_text)
+            print(f"Extracted wallet address: {wallet_address}")
 
             # Get the original tweet
             try:
@@ -183,8 +248,7 @@ class OpacityVerificationWorker:
                         "Could not retrieve original tweet",
                         {}
                     )
-                # Debug log
-                print(f"Retrieved original tweet: {original_tweet}")
+                print(f"Original tweet: {original_tweet}")
 
             except Exception as e:
                 return (
@@ -196,7 +260,20 @@ class OpacityVerificationWorker:
             # Store both tweet IDs for replies
             reply_tweet_id = tweet_id
             original_tweet_id = original_tweet['id']
-            
+
+            # Get author ID directly from tweet data
+            original_tweet_author = original_tweet['author_id']
+            if not original_tweet_author:
+                return (
+                    FunctionResultStatus.FAILED,
+                    "Could not determine tweet author",
+                    {}
+                )
+
+            print(f"Original tweet author ID: {original_tweet_author}")  # Debug
+            is_previously_verified = original_tweet_author in self.verified_agents
+            print(f"Previously verified: {is_previously_verified}")  # Debug
+
             # Extract proof ID from original tweet
             try:
                 proof_data = self._extract_proof_from_tweet(original_tweet['text'])
@@ -206,7 +283,6 @@ class OpacityVerificationWorker:
                         "No proof ID found in the original tweet",
                         {"original_tweet_id": original_tweet['id']}
                     )
-                print(f"Extracted proof data: {proof_data}")  # Debug log
 
             except Exception as e:
                 return (
@@ -219,10 +295,27 @@ class OpacityVerificationWorker:
                     }
                 )
 
+            # Get the original tweet author's ID
+            original_tweet_author = original_tweet['author_id']
+            is_previously_verified = original_tweet_author in self.verified_agents
+
+            # Extract wallet address from reply tweet if different from original
+            wallet_address = None
+            if reply_tweet_id != original_tweet_id:
+                reply_tweet = self.twitter_plugin.twitter_client.get_tweet(
+                    reply_tweet_id,
+                    tweet_fields=['text']
+                )
+                if reply_tweet and reply_tweet.data:
+                    print(f"Reply tweet text: {reply_tweet.data.text}")
+                    wallet_address = self._extract_wallet_address(
+                        reply_tweet.data.text
+                    )
+                    print(f"Extracted wallet address: {wallet_address}")
+
             # Verify the proof
             try:
                 proof_id = proof_data["proof_id"]
-                # Debug log
                 print(f"Attempting to verify proof ID: {proof_id}")
 
                 # First, fetch the proof data using the ID
@@ -244,25 +337,72 @@ class OpacityVerificationWorker:
                 )
                 # Post replies before returning the result
                 try:
-                    reply_tweet_fn = self.twitter_plugin.get_function('reply_tweet')
-                    
-                    # Construct the reply message based on verification result
+                    reply_tweet_fn = self.twitter_plugin.get_function(
+                        'reply_tweet'
+                    )
+
+                    # Handle different verification scenarios
                     if verification_result:
-                        reply_text = f"✅ Proof verification successful! The AI inference proof (ID: {proof_id}) has been validated."
+                        if not is_previously_verified:
+                            # First-time verification with valid proof
+                            buy_trust()
+                            self._save_verified_agent(original_tweet_author)
+
+                            if wallet_address:
+                                try:
+                                    transfer_seraph(wallet_address)
+                                    reply_text = (
+                                        f"✅ First-time verification successful! "
+                                        f"The AI inference proof "
+                                        f"(ID: {proof_id}) has been validated.\n"
+                                        f"Bounty of 1 SERAPH transferred to "
+                                        f"{wallet_address}"
+                                    )
+                                except Exception as e:
+                                    reply_text = (
+                                        f"✅ First-time verification successful! "
+                                        f"The AI inference proof "
+                                        f"(ID: {proof_id}) has been validated.\n"
+                                        f"Failed to transfer SERAPH: {str(e)}"
+                                    )
+                            else:
+                                reply_text = (
+                                    f"✅ First-time verification successful! "
+                                    f"The AI inference proof "
+                                    f"(ID: {proof_id}) has been validated.\n"
+                                    f"No wallet address provided for SERAPH bounty"
+                                )
+                        else:
+                            # Previously verified agent with valid proof
+                            buy_trust()
+                            reply_text = (
+                                f"✅ Proof verification successful! "
+                                f"The AI inference proof "
+                                f"(ID: {proof_id}) has been validated."
+                            )
                     else:
-                        reply_text = f"❌ Proof verification failed. The provided proof (ID: {proof_id}) could not be validated."
+                        # Invalid proof handling
+                        if not is_previously_verified:
+                            buy_distrust()
+                        else:
+                            sell_trust()
+                        reply_text = (
+                            f"❌ Proof verification failed. "
+                            f"The provided proof (ID: {proof_id}) "
+                            f"could not be validated."
+                        )
 
                     # Reply to the original tweet
                     reply_tweet_fn(original_tweet_id, reply_text)
 
-                    # If the requesting tweet is different from the original, reply there too
+                    # If requesting tweet different from original, reply there too
                     if reply_tweet_id != original_tweet_id:
                         reply_text += "\n(Original proof found in parent tweet)"
                         reply_tweet_fn(reply_tweet_id, reply_text)
 
                 except Exception as e:
                     print(f"Error posting verification replies: {str(e)}")
-                    # Continue even if replies fail - at least return verification result
+                    # Continue even if replies fail - return verification result
 
                 # Return the final result
                 return (
@@ -327,8 +467,7 @@ def main():
     worker = OpacityVerificationWorker()
 
     # Test with a real tweet ID
-    test_tweet_id = 1885603754822820041
-    #"1885493193614950476"  # Replace with actual tweet ID
+    test_tweet_id = 1885775347679138028
     worker.run(test_tweet_id)
 
 
