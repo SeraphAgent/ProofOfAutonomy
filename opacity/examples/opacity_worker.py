@@ -350,27 +350,30 @@ class OpacityVerificationWorker:
 
                             if wallet_address:
                                 try:
-                                    transfer_seraph(wallet_address)
-                                    reply_text = (
-                                        f"✅ First-time verification successful! "
-                                        f"The AI inference proof "
-                                        f"(ID: {proof_id}) has been validated.\n"
-                                        f"Bounty of 1 SERAPH transferred to "
-                                        f"{wallet_address}"
-                                    )
+                                    tx = transfer_seraph(wallet_address)
+                                    if tx and hasattr(tx, 'transaction_hash'):
+                                        base_scan_url = f"https://basescan.org/tx/{tx.transaction_hash}"
+                                        reply_text = (
+                                            f"✅ First-time verification successful! "
+                                            f"The AI inference proof "
+                                            f"(ID: {proof_id}) has been validated.\n"
+                                            f"Bounty of 1 SERAPH transferred to "
+                                            f"{wallet_address}\n"
+                                            f"Transaction: {base_scan_url}"
+                                        )
                                 except Exception as e:
                                     reply_text = (
                                         f"✅ First-time verification successful! "
                                         f"The AI inference proof "
                                         f"(ID: {proof_id}) has been validated.\n"
-                                        f"Failed to transfer SERAPH: {str(e)}"
+                                        f"SERAPH transfer failed. 😔"
                                     )
                             else:
                                 reply_text = (
                                     f"✅ First-time verification successful! "
                                     f"The AI inference proof "
                                     f"(ID: {proof_id}) has been validated.\n"
-                                    f"No wallet address provided for SERAPH bounty"
+                                    f"No wallet address provided for SERAPH bounty 😔"
                                 )
                         else:
                             # Previously verified agent with valid proof
