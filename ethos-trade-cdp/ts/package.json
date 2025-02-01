@@ -1,0 +1,16 @@
+{
+  "name": "ethos-trade",
+  "module": "main.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@coinbase/coinbase-sdk": "^0.17.0",
+    "dotenv": "^16.4.7",
+    "install": "^0.13.0"
+  }
+}
