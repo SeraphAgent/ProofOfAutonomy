@@ -296,7 +296,7 @@ class OpacityVerificationWorker:
                 
                 base_message = f"[SUCCESS] Agent verified by Seraph x Opacity\n└─ Proof {proof_id}"
                 if trust_url:
-                    base_message += f"\n└─ Trust initialized: {trust_url}"
+                    base_message += f"\n└─ Trust intialized: {trust_url}"
 
                 if wallet_address:
                     try:
@@ -304,10 +304,10 @@ class OpacityVerificationWorker:
                         seraph_url = get_scan_url(seraph_tx)
                         if seraph_url:
                             print(f"[SERAPH] Transferred to {wallet_address}: {seraph_url}")
+                            short_wallet = f"{wallet_address[:6]}...{wallet_address[-4:]}"
                             return (
                                 f"{base_message}\n"
-                                f"└─ Welcome reward: 1.0 SERAPH → {wallet_address}\n"
-                                f"└─ Transfer tx: {seraph_url}"
+                                f"└─ Welcome reward: 1.0 SERAPH → {short_wallet}: {seraph_url}\n"
                             )
                     except Exception as e:
                         print(f"[ERROR] SERAPH transfer failed: {e}")
@@ -405,20 +405,55 @@ class OpacityVerificationWorker:
 
             try:
                 proof_id = proof_data["proof_id"]
-                proof_response = requests.get(
-                    f"{self.opacity_plugin.prover_url}/api/logs/{proof_id}"
-                )
-                if not proof_response.ok:
-                    raise Exception(f"Failed to fetch proof data: {proof_response.text}")
+                
+                try:
+                    proof_response = requests.get(
+                        f"{self.opacity_plugin.prover_url}/api/logs/{proof_id}"
+                    )
+                    if not proof_response.ok:
+                        distrust_tx = buy_distrust()
+                        distrust_url = None
+                        if distrust_tx and hasattr(distrust_tx, 'transaction_hash'):
+                            distrust_url = f"https://basescan.org/tx/{distrust_tx.transaction_hash}"
+                            print(f"[DISTRUST] Invalid proof detected: {distrust_url}")
 
-                verification_result = self.opacity_plugin.verify_proof(
-                    {"proof": proof_response.json()}
-                )
+                        reply_tweet_fn = self.twitter_plugin.get_function('reply_tweet')
+                        reply_text = f"[FAILED] Invalid or expired proof\n└─ Proof {proof_id}"
+                        if distrust_url:
+                            reply_text += f"\n└─ Distrust signal: {distrust_url}"
+                        
+                        reply_tweet_fn(tweet_id, reply_text)
+                        
+                        return (
+                            FunctionResultStatus.DONE,
+                            "Invalid proof ID - verification failed",
+                            {
+                                "valid": False,
+                                "original_tweet_id": original_tweet['id'],
+                                "proof_id": proof_id
+                            }
+                        )
 
-                # Save tweet ID if verification is successful
+                    proof_data = proof_response.json()
+                    verification_result = self.opacity_plugin.verify_proof({"proof": proof_data})
+
+                except requests.RequestException as e:
+                    print(f"Error fetching proof data: {e}")
+                    return (
+                        FunctionResultStatus.FAILED,
+                        f"Error fetching proof data: {str(e)}",
+                        {
+                            "original_tweet_id": original_tweet['id'],
+                            "proof_id": proof_id
+                        }
+                    )
+
+                # Continue with existing verification logic
                 if verification_result:
                     self._save_verified_tweet(original_tweet_id)
-
+                    if not is_previously_verified:
+                        self._save_verified_agent(str(original_tweet_author))
+                        print(f"[DEBUG] Saved new verified agent: {original_tweet_author}")
 
                 return self._handle_verification_response(
                     verification_result,
@@ -477,8 +512,10 @@ class OpacityVerificationWorker:
 
 def main():
     worker = OpacityVerificationWorker()
-    test_tweet_id = 1885819053702594995
+    test_tweet_id = 1885830149733753158
     worker.run(test_tweet_id)
+    
+    # 
 
 
 if __name__ == "__main__":
