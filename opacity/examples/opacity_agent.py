@@ -18,6 +18,8 @@ from opacity_game_sdk.opacity_plugin import OpacityPlugin
 from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin
 from opacity_worker import OpacityVerificationWorker
 
+CHECK_INTERVAL_MINUTES = 1
+
 # Load environment variables
 load_dotenv()
 
@@ -28,7 +30,7 @@ def verify_mentioned_results(**kwargs) -> tuple:
     """Function to process Twitter mentions and verify proofs."""
     try:
         # Calculate the cutoff time (5 minutes ago) with RFC3339 formatting
-        cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=5)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=CHECK_INTERVAL_MINUTES)
         formatted_time = cutoff_time.strftime('%Y-%m-%dT%H:%M:%SZ')
         print(f"[INFO] Processing mentions after: {formatted_time}")
         
@@ -134,7 +136,7 @@ def check_mentions():
             print("\n[INFO] Starting new mention check cycle...")
             worker.run("Check Twitter mentions for verification requests")
             print("[INFO] Waiting for next check cycle...")
-            time.sleep(1 * 60)  # Wait 5 minutes between checks
+            time.sleep(CHECK_INTERVAL_MINUTES * 60)  # Wait between checks
         except Exception as e:
             print(f"[ERROR] Error in check_mentions loop: {e}")
             time.sleep(60)  # Wait a minute before retrying on error

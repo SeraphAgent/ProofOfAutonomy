@@ -512,7 +512,7 @@ class OpacityVerificationWorker:
 
 def main():
     worker = OpacityVerificationWorker()
-    test_tweet_id = 1885830149733753158
+    test_tweet_id = 1885966870349558238
     worker.run(test_tweet_id)
     
     # 
