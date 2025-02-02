@@ -66,7 +66,9 @@ Built the first decentralized AI reputation system using our verification layer:
      - Real-time portfolio visualization
    - Penalizes deceptive practices through distrust mechanisms
 
+<div align="center">
 <img src="./assets/proof_of_autonomy.png" width="50%" alt="Proof of Autonomy Architecture">
+</div>
 
 ## 🛠 Technical Implementation
 
