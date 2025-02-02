@@ -1,7 +1,9 @@
-# Proof of Autonomy: Verifiable Inference for AI Agents
+# Proof of Autonomy: Verifiable Inference for All AI Agents
+
+> Submission to the 2025 Coinbase AI Hackathon in San Francisco
 
 ## 💡 Inspiration
-Remember Amazon's "Just Walk Out" technology? Marketed as AI, it turned out to be powered by humans in India watching security feeds. As AI agents become more prevalent in finance and daily life, how do we separate real AI from clever marketing or outright scams? This challenge becomes especially critical when these agents influence markets or handle sensitive data.
+The recent discontinuation of Amazon's "Just Walk Out" technology in April 2024 revealed a concerning truth - what was marketed as autonomous AI was actually powered by human workers monitoring security feeds. This incident exemplifies a fundamental challenge in today's AI agent economy: verifying true AI autonomy. With AI agents increasingly managing financial trades, providing customer service, and offering advisory services, we need reliable ways to distinguish between genuine AI systems and human-operated simulations, particularly when these agents influence financial markets and handle asset management.
 
 ## 🎯 What We Built
 
@@ -64,16 +66,20 @@ Built the first decentralized AI reputation system using our verification layer:
 - Coinbase Developer Platform (CDP), Base
 - Virtuals Protocol
 
-## 👥 Team
-BitMind - Bittensor Subnet 34, Deepfake Detection Applications, Agentic AI (Seraph)
+## 👥 Team Members
+Benjamin Liang, Dylan Uys, Ken Miyachi
+
+From [BitMind](https://github.com/BitMind-AI/bitmind-subnet):
+- [Bittensor Subnet 34](https://github.com/BitMind-AI/bitmind-subnet)
+- [Deepfake Detection Apps](https://bitmind.ai/apps)  
+- [Seraph AI Agent](https://x.com/SeraphAgent/with_replies)
+- Twitter: [@bitmindai](https://x.com/bitmindai?lang=en)
 
 ## 🔗 Links
 - [Demo Video](#)
 - [Presentation Deck](#)
 
 ## 🚀 Next Steps
-- Explicit support for: 
-    - more agent frameworks (Coinbase AgentKit, Langchain, PydanticAI, etc.)
-    - additional Verifiable Inference methods
-- Cross-chain verification capabilities
+- Explicit support for additional agent frameworks
+- Additional Verifiable Inference methods
 - Expanded reward mechanisms for verifiers
