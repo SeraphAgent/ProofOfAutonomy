@@ -12,16 +12,11 @@ import re
 import requests
 from opacity_game_sdk.opacity_plugin import OpacityPlugin
 from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin
+import time
+from pathlib import Path
 import sys
-sys.path.append('/home/user/CoinbaseAI/ethos-trade-cdp/py')
-from main import (
-    buy_trust,
-    sell_trust,
-    buy_distrust,
-    sell_distrust,
-    transfer_seraph
-)
 
+from ethosMarket.ethos_trade_cdp.py.main import buy_trust, sell_trust
 
 class OpacityVerificationWorker:
     def __init__(self):
@@ -171,35 +166,48 @@ class OpacityVerificationWorker:
 
     def _get_original_tweet(self, tweet_id: str) -> Optional[Dict]:
         """Get the original (root) tweet of a thread."""
-        try:
-            current_tweet = self._get_tweet_data(tweet_id)
+        max_retries = 3
+        base_wait_time = 60  # seconds
+        
+        for attempt in range(max_retries):
+            try:
+                current_tweet = self._get_tweet_data(tweet_id)
 
-            if not current_tweet or not current_tweet.data:
-                raise ValueError(f"Tweet with ID {tweet_id} not found")
+                if not current_tweet or not current_tweet.data:
+                    raise ValueError(f"Tweet with ID {tweet_id} not found")
 
-            referenced_tweets = getattr(current_tweet.data, 'referenced_tweets', None)
-            if not referenced_tweets:
+                referenced_tweets = getattr(current_tweet.data, 'referenced_tweets', None)
+                if not referenced_tweets:
+                    return self._format_tweet_data(current_tweet.data)
+
+                while referenced_tweets:
+                    parent_ref = next(
+                        (ref for ref in referenced_tweets if ref.type == 'replied_to'),
+                        None
+                    )
+                    if not parent_ref:
+                        break
+
+                    # Add delay between API calls
+                    time.sleep(2)
+                    
+                    current_tweet = self._get_tweet_data(str(parent_ref.id))
+                    if not current_tweet or not current_tweet.data:
+                        break
+                    
+                    referenced_tweets = getattr(current_tweet.data, 'referenced_tweets', None)
+
                 return self._format_tweet_data(current_tweet.data)
 
-            while referenced_tweets:
-                parent_ref = next(
-                    (ref for ref in referenced_tweets if ref.type == 'replied_to'),
-                    None
-                )
-                if not parent_ref:
-                    break
-
-                current_tweet = self._get_tweet_data(str(parent_ref.id))
-                if not current_tweet or not current_tweet.data:
-                    break
-                
-                referenced_tweets = getattr(current_tweet.data, 'referenced_tweets', None)
-
-            return self._format_tweet_data(current_tweet.data)
-
-        except Exception as e:
-            print(f"Error in _get_original_tweet: {e}")
-            raise
+            except Exception as e:
+                if "429" in str(e):
+                    wait_time = base_wait_time * (attempt + 1)  # Exponential backoff
+                    print(f"[WARN] Rate limit hit, waiting {wait_time} seconds (attempt {attempt + 1}/{max_retries})...")
+                    time.sleep(wait_time)
+                    if attempt == max_retries - 1:  # Last attempt
+                        raise RuntimeError(f"Rate limit persisted after {max_retries} retries")
+                    continue  # Try again
+                raise  # Re-raise other exceptions
 
     def _format_tweet_data(self, tweet_data) -> Dict:
         """Format tweet data into consistent structure."""
@@ -512,7 +520,7 @@ class OpacityVerificationWorker:
 
 def main():
     worker = OpacityVerificationWorker()
-    test_tweet_id = 1885966870349558238
+    test_tweet_id = 1886017939822047367
     worker.run(test_tweet_id)
     
     # 

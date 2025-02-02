@@ -34,20 +34,31 @@ def verify_mentioned_results(**kwargs) -> tuple:
         formatted_time = cutoff_time.strftime('%Y-%m-%dT%H:%M:%SZ')
         print(f"[INFO] Processing mentions after: {formatted_time}")
         
-        # Get bot ID
-        me = opacity_worker.twitter_plugin.twitter_client.get_me()
-        if not me or not me.data:
-            print("[ERROR] Could not retrieve bot's user ID")
-            return FunctionResultStatus.FAILED, "Failed to get bot's user ID", {}
-        bot_id = me.data.id
+        try:
+            # Get bot ID
+            me = opacity_worker.twitter_plugin.twitter_client.get_me()
+            if not me or not me.data:
+                print("[ERROR] Could not retrieve bot's user ID")
+                return FunctionResultStatus.FAILED, "Failed to get bot's user ID", {}
+            bot_id = me.data.id
+            
+            # Add delay between API calls
+            time.sleep(2)
 
-        # Get mentions
-        mentions = opacity_worker.twitter_plugin.twitter_client.get_users_mentions(
-            id=bot_id,
-            max_results=10,
-            tweet_fields=['id', 'created_at', 'text'],
-            start_time=formatted_time 
-        )
+            # Get mentions
+            mentions = opacity_worker.twitter_plugin.twitter_client.get_users_mentions(
+                id=bot_id,
+                max_results=5,
+                tweet_fields=['id', 'created_at', 'text'],
+                start_time=formatted_time 
+            )
+        except Exception as e:
+            if "429" in str(e):
+                print("[WARN] Rate limit hit, waiting 60 seconds...")
+                time.sleep(60)
+                return FunctionResultStatus.FAILED, "Rate limit hit, please retry", {}
+            raise e
+        
         print("got mentions")
         print(f"Mentions type: {type(mentions)}")
         print(f"Mentions data: {mentions}")
@@ -83,6 +94,8 @@ def verify_mentioned_results(**kwargs) -> tuple:
             tweet_id = int(mention.id)
             print(f"\n[INFO] Processing mention tweet ID: {tweet_id} from {tweet_time.isoformat()}")
             
+            time.sleep(5)
+
             # Use the opacity worker to verify the tweet
             try:
                 status, message, result = opacity_worker.verify_tweet_thread(str(tweet_id)) 
@@ -90,10 +103,23 @@ def verify_mentioned_results(**kwargs) -> tuple:
                     verified_count += 1
                 print(f"[INFO] Verification result: {message}")
             except Exception as e:
-                print(f"[ERROR] Failed to verify tweet {tweet_id}: {e}")
+                if "429" in str(e):
+                    print("[WARN] Rate limit hit during verification, waiting 60 seconds...")
+                    time.sleep(60)
+                    try:
+                        # One retry after rate limit wait
+                        status, message, result = opacity_worker.verify_tweet_thread(str(tweet_id))
+                        if status == FunctionResultStatus.DONE and result.get("valid", False):
+                            verified_count += 1
+                        print(f"[INFO] Retry verification result: {message}")
+                    except Exception as retry_e:
+                        print(f"[ERROR] Failed to verify tweet {tweet_id} on retry: {retry_e}")
+                        if "429" in str(retry_e):
+                            return FunctionResultStatus.FAILED, "Rate limit persists after retry", {}
+                else:
+                    print(f"[ERROR] Failed to verify tweet {tweet_id}: {e}")
             
             processed_count += 1
-            time.sleep(2)
         
         result_message = (
             f"Processed {processed_count} mentions, "
