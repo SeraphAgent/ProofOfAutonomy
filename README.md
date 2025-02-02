@@ -65,8 +65,8 @@ Built the first decentralized AI reputation system using our verification layer:
 
 ## 🛠 Technical Implementation
 
-- **Virtuals Proof Verifier Plugin**: [`https://github.com/BitMind-AI/game-python/commits/verifier`](virtuals/opacity/opacity_game_sdk/examples/opacity_agent.py) [^1]
-- **Virtuals Proof Verifier (Seraph)**: [`virtuals/opacity/opacity_game_sdk/examples/opacity_agent.py`](virtuals/opacity/opacity_game_sdk/examples/opacity_agent.py)
+- **Virtuals Proof Verifier Plugin**: [`virtuals/opacity/opacity_game_sdk/examples/opacity_agent.py`](https://github.com/BitMind-AI/game-python/commits/verifier) [^1]
+- **Virtuals Proof Verifier (Seraph)**: [`virtuals/opacity/examples/opacity_agent.py`](virtuals/opacity/opacity_game_sdk/examples/opacity_agent.py)
 - **ElizaOS Opacity Generator and Verifier Actions**: [`https://github.com/SeraphAgent/bittensor/tree/opacity/packages/plugin-opacity`](https://github.com/SeraphAgent/bittensor/tree/opacity/packages/plugin-opacity) [^2]
 - **Proof of Autonomy Buying/Selling on Ethos Market (CDP, Base)**: [`ethosMarket/`](./ethosMarket/)
 - **Front End Reputation System Dashboard**: [`web3-hack-front/`](./web3-hack-front/)
