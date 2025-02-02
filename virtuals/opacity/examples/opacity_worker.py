@@ -16,7 +16,7 @@ import time
 from pathlib import Path
 import sys
 
-from ethosMarket.ethos_trade_cdp.py.main import buy_trust, sell_trust
+from ethosMarket.ethos_trade_cdp.py.main import buy_trust, sell_trust, transfer_seraph
 
 class OpacityVerificationWorker:
     def __init__(self):
