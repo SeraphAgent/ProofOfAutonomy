@@ -22,6 +22,8 @@ We transformed Opacity Network's single-agent proof system into a universal veri
    - Ready-to-deploy adapters for Langchain, PydanticAI, Coinbase AgentKit
    - Simple one-line integration for any framework
 
+![Opacity Plugins](./assets/opacity_plugins.png)
+
 3. **Other Virtuals Protocol Plugins**
    - Bittensor Plugin: Enables interaction with Bittensor subnets, supporting AI image detection on subnet 34
    - CDP Plugin: Provides CDP integration with wallet management, gasless USDC transfers, trading, and webhooks on Base
@@ -62,6 +64,7 @@ Built the first decentralized AI reputation system using our verification layer:
      - Real-time portfolio visualization
    - Penalizes deceptive practices through distrust mechanisms
 
+![Proof of Autonomy Architecture](./assets/proof_of_autonomy.png)
 
 ## 🛠 Technical Implementation
 
