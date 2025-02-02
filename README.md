@@ -36,24 +36,31 @@ Built the first decentralized AI reputation system using our verification layer:
 
 2. **Automated Trust Network**
    - Seraph actively monitors and verifies AI inference claims
-   - Automated trust/distrust positions on Ethos Markets based on verification
-   - Smart contract rewards for first-time verified agents:
-     - 1.0 SERAPH token for initial verification
+   - Automated trust/distrust positions on Ethos Markets executed through CDP agent wallet
+   - Rewards system using CDP agent wallet:
+     - 1.0 SERAPH token transferred to users who request verification
      - Trust position opened on Ethos Markets
      - Continuous trust strengthening for consistent valid proofs
 
 3. **Verification Workflow**
    - Agents post proofs with their inference results
    - Seraph verifies proofs through Opacity's infrastructure
-   - Valid proofs trigger trust positions and rewards
-   - Invalid proofs trigger distrust positions and community alerts
-   - All verification results permanently recorded on-chain
+   - Valid proofs trigger:
+     - Trust positions (executed via CDP agent wallet on Base)
+     - SERAPH token rewards transferred to verification requestor
+   - Invalid proofs trigger:
+     - Distrust positions (executed via CDP agent wallet)
+     - Community alerts
+   - All verification results and transactions permanently recorded on Base
 
-4. **Economic Incentives**
-   - Rewards genuine AI behavior through SERAPH tokens
-   - Creates market signals through Ethos trade positions
+4. **Economic Incentives & Live Reputation Dashboard**
+   - Rewards verification requests through SERAPH token transfers
+   - Creates market signals through Ethos trade positions (via CDP agent wallet)
+   - Live dashboard tracks:
+     - Transfer events from agent wallet on Base
+     - Trust/distrust positions from Ethos contract
+     - Real-time portfolio visualization
    - Penalizes deceptive practices through distrust mechanisms
-   - Builds foundation for crowdsourced AI authenticity verification
 
 
 ## 🛠 Technical Implementation
@@ -61,7 +68,7 @@ Built the first decentralized AI reputation system using our verification layer:
 - **Virtuals Proof Verifier Plugin**: [`https://github.com/BitMind-AI/game-python/commits/verifier`](virtuals/opacity/opacity_game_sdk/examples/opacity_agent.py) [^1]
 - **Virtuals Proof Verifier (Seraph)**: [`virtuals/opacity/opacity_game_sdk/examples/opacity_agent.py`](virtuals/opacity/opacity_game_sdk/examples/opacity_agent.py)
 - **ElizaOS Opacity Generator and Verifier Actions**: [`https://github.com/SeraphAgent/bittensor/tree/opacity/packages/plugin-opacity`](https://github.com/SeraphAgent/bittensor/tree/opacity/packages/plugin-opacity) [^2]
-- **Proof of Autonomy Buying/Selling on Ethos Market (CDP, Base)**: [`ethos-market/`](./ethos-market/)
+- **Proof of Autonomy Buying/Selling on Ethos Market (CDP, Base)**: [`ethosMarket/`](./ethos-market/)
 - **Virtuals Bittensor Plugin**: [`https://github.com/BitMind-AI/game-python/tree/main/plugins/bittensor`](https://github.com/BitMind-AI/game-python/tree/main/plugins/bittensor) [^3]
 - **Virtuals CDP Plugin**: [`https://github.com/BitMind-AI/game-python/tree/cdp-plugin/plugins/cdp`](https://github.com/BitMind-AI/game-python/tree/cdp-plugin/plugins/cdp) [^4]
 
