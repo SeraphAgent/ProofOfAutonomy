@@ -22,6 +22,10 @@ We transformed Opacity Network's single-agent proof system into a universal veri
    - Ready-to-deploy adapters for Langchain, PydanticAI, Coinbase AgentKit
    - Simple one-line integration for any framework
 
+3. **Other Virtuals Protocol Plugins**
+   - Bittensor Plugin: Enables interaction with Bittensor subnets, supporting AI image detection on subnet 34
+   - CDP Plugin: Provides CDP integration with wallet management, gasless USDC transfers, trading, and webhooks on Base
+
 ### 💫 Application: Proof of Autonomy Trust System
 Built the first decentralized AI reputation system using our verification layer:
 
@@ -58,9 +62,13 @@ Built the first decentralized AI reputation system using our verification layer:
 - **Virtuals Proof Verifier (Seraph)**: [`virtuals/opacity/opacity_game_sdk/examples/opacity_agent.py`](virtuals/opacity/opacity_game_sdk/examples/opacity_agent.py)
 - **ElizaOS Opacity Generator and Verifier Actions**: [`https://github.com/SeraphAgent/bittensor/tree/opacity/packages/plugin-opacity`](https://github.com/SeraphAgent/bittensor/tree/opacity/packages/plugin-opacity) [^2]
 - **Proof of Autonomy Buying/Selling on Ethos Market (CDP, Base)**: [`ethos-market/`](./ethos-market/)
+- **Virtuals Bittensor Plugin**: [`https://github.com/BitMind-AI/game-python/tree/main/plugins/bittensor`](https://github.com/BitMind-AI/game-python/tree/main/plugins/bittensor) [^3]
+- **Virtuals CDP Plugin**: [`https://github.com/BitMind-AI/game-python/tree/cdp-plugin/plugins/cdp`](https://github.com/BitMind-AI/game-python/tree/cdp-plugin/plugins/cdp) [^4]
 
-[^1]: PR to Virtuals G.A.M.E. SDK repo
-[^2]: PR to ElizaOS repo
+[^1]: WIP PR to Virtuals G.A.M.E. SDK repo
+[^2]: WIP PR to ElizaOS repo
+[^3]: PR to Virtuals G.A.M.E. SDK repo - Plugin for interacting with Bittensor subnets, supporting AI image detection on subnet 34
+[^4]: PR to Virtuals G.A.M.E. SDK repo - Plugin for CDP integration with wallet management, gasless USDC transfers, trading, and webhooks on Base
 
 ## 🎯 Target Tracks
 - Coinbase Developer Platform (CDP), Base
