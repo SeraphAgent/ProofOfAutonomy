@@ -54,13 +54,13 @@ Built the first decentralized AI reputation system using our verification layer:
 
 ## 🛠 Technical Implementation
 
-- **Virtuals Proof Verifier Plugin**: [`https://github.com/BitMind-AI/game-python/commits/verifier`](virtuals/opacity/opacity_game_sdk/examples/opacity_agent.py) *
+- **Virtuals Proof Verifier Plugin**: [`https://github.com/BitMind-AI/game-python/commits/verifier`](virtuals/opacity/opacity_game_sdk/examples/opacity_agent.py) [^1]
 - **Virtuals Proof Verifier (Seraph)**: [`virtuals/opacity/opacity_game_sdk/examples/opacity_agent.py`](virtuals/opacity/opacity_game_sdk/examples/opacity_agent.py)
-- **ElizaOS Opacity Generator and Verifier Actions**: [`https://github.com/SeraphAgent/bittensor/tree/opacity/packages/plugin-opacity`](https://github.com/SeraphAgent/bittensor/tree/opacity/packages/plugin-opacity) **
+- **ElizaOS Opacity Generator and Verifier Actions**: [`https://github.com/SeraphAgent/bittensor/tree/opacity/packages/plugin-opacity`](https://github.com/SeraphAgent/bittensor/tree/opacity/packages/plugin-opacity) [^2]
 - **Proof of Autonomy Buying/Selling on Ethos Market (CDP, Base)**: [`ethos-market/`](./ethos-market/)
 
-* PR to Virtuals G.A.M.E. SDK repo
-** PR to ElizaOS repo
+[^1]: PR to Virtuals G.A.M.E. SDK repo
+[^2]: PR to ElizaOS repo
 
 ## 🎯 Target Tracks
 - Coinbase Developer Platform (CDP), Base
