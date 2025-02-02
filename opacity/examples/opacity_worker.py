@@ -160,7 +160,7 @@ class OpacityVerificationWorker:
         except Exception as e:
             print(f"Error extracting wallet address: {e}")
             return None
-
+        
     def _get_tweet_data(self, tweet_id: str) -> Optional[Dict]:
         """Get tweet data with specified fields."""
         return self.twitter_plugin.twitter_client.get_tweet(
