@@ -56,6 +56,7 @@ The Python script provides the following functions for interacting with the cont
 - `sell_trust(market_id: int)`: Executes the `dumpeetTrust` contract method.
 - `sell_distrust(market_id: int)`: Executes the `dumpeetDistrust` contract method.
 - `transfer_seraph(to_address: str)`: Transfers SERAPH tokens to another address.
+- `approve_and_execute_rewards()`: Executes 1/10th of wallet balance into staking rewards.
 
 Each function interacts with the smart contract using the provided wallet.
 
@@ -69,6 +70,7 @@ The TypeScript script provides equivalent functions:
 - `sellTrust(marketId: number)`: Executes the `dumpeetTrust` contract method.
 - `sellDistrust(marketId: number)`: Executes the `dumpeetDistrust` contract method.
 - `transferSeraph(toAddress: string)`: Transfers SERAPH tokens to another address.
+- `approveAndExecuteRewards()`: Executes 1/10th of wallet balance into staking rewards.
 
 ## Notes
 
