@@ -144,16 +144,17 @@ def approve_and_execute_rewards():
     """Approves and executes rewards for stTAO and SERAPH."""
 
     # Approve stTAO
-    sttao_balance = wallet.balance(STTAO_CONTRACT_ADDRESS)
+    sttao_balance = int(float(wallet.balance(STTAO_CONTRACT_ADDRESS)) * 1e9)
     sttao_approve_tx = execute_approve_sttao(
         "approve", str(CONTRACT_ADDRESS_STAKING), sttao_balance
     )
+
     if sttao_approve_tx is None:
         print("Failed to approve stTAO")
         return None
 
     # Approve SERAPH
-    seraph_balance = wallet.balance(SERAPH_CONTRACT_ADDRESS)
+    seraph_balance = int(float(wallet.balance(SERAPH_CONTRACT_ADDRESS)) * 1e18)
     seraph_approve_tx = execute_approve_seraph(
         "approve", str(CONTRACT_ADDRESS_STAKING), seraph_balance
     )
@@ -185,3 +186,4 @@ def approve_and_execute_rewards():
         "sttao_reward_tx": sttao_reward_tx,
         "seraph_reward_tx": seraph_reward_tx,
     }
+    

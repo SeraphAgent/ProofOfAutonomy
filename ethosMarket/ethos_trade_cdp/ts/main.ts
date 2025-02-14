@@ -66,7 +66,7 @@ async function invokeContract(params: InvokeContractParams) {
 // --- Contract Specific Functions ---
 
 async function executeTrade(method: string, marketId: number) {
-  const args = { _marketId: marketId.toFixed() }
+  const args = { _marketId: marketId.toString() }
   return invokeContract({
     contractAddress: CONTRACT_ADDRESS_ETHOS,
     method,
@@ -82,7 +82,7 @@ async function executeReward(
 ) {
   const args = {
     _rewardToken: rewardToken,
-    _rewardAmount: rewardAmount.toFixed(),
+    _rewardAmount: rewardAmount.toString(),
   }
   return invokeContract({
     contractAddress: CONTRACT_ADDRESS_STAKING,
@@ -97,7 +97,7 @@ async function executeApproveSttao(
   spender: string,
   amount: number
 ) {
-  const args = { spender, amount: amount.toFixed() }
+  const args = { spender, amount: amount.toString() }
   return invokeContract({
     contractAddress: STTAO_CONTRACT_ADDRESS,
     method,
@@ -111,7 +111,7 @@ async function executeApproveSeraph(
   spender: string,
   amount: number
 ) {
-  const args = { spender, amount: amount.toFixed() }
+  const args = { spender, amount: amount.toString() }
   return invokeContract({
     contractAddress: SERAPH_CONTRACT_ADDRESS,
     method,
@@ -160,7 +160,9 @@ export async function transferSeraph(toAddress: string) {
 
 export async function approveAndExecuteRewards() {
   // Approve stTAO
-  const sttaoBalance = await wallet.getBalance(STTAO_CONTRACT_ADDRESS)
+  const sttaoBalance = (
+    await wallet.getBalance(STTAO_CONTRACT_ADDRESS)
+  ).toNumber()
   const sttaoApproveTx = await executeApproveSttao(
     'approve',
     CONTRACT_ADDRESS_STAKING,
@@ -172,7 +174,9 @@ export async function approveAndExecuteRewards() {
   }
 
   // Approve SERAPH
-  const seraphBalance = await wallet.getBalance(SERAPH_CONTRACT_ADDRESS)
+  const seraphBalance = (
+    await wallet.getBalance(SERAPH_CONTRACT_ADDRESS)
+  ).toNumber()
   const seraphApproveTx = await executeApproveSeraph(
     'approve',
     CONTRACT_ADDRESS_STAKING,
