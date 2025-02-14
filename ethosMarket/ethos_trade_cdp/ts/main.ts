@@ -186,7 +186,7 @@ export async function approveAndExecuteRewards() {
   // Execute reward for stTAO
   const rewardAmountSttao = sttaoBalance / 10
   const sttaoRewardTx = await executeReward(
-    'reward',
+    'updateRewardIndex',
     STTAO_CONTRACT_ADDRESS,
     rewardAmountSttao
   )
@@ -198,7 +198,7 @@ export async function approveAndExecuteRewards() {
   // Execute reward for SERAPH
   const rewardAmountSeraph = seraphBalance / 10
   const seraphRewardTx = await executeReward(
-    'reward',
+    'updateRewardIndex',
     SERAPH_CONTRACT_ADDRESS,
     rewardAmountSeraph
   )

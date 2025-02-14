@@ -164,7 +164,7 @@ def approve_and_execute_rewards():
     # Execute reward for stTAO
     rewardAmount_sttao = sttao_balance // 10
     sttao_reward_tx = execute_reward(
-        "reward", str(STTAO_CONTRACT_ADDRESS), rewardAmount_sttao
+        "updateRewardIndex", str(STTAO_CONTRACT_ADDRESS), rewardAmount_sttao
     )
     if sttao_reward_tx is None:
         print("Failed to execute reward for stTAO")
@@ -173,7 +173,7 @@ def approve_and_execute_rewards():
     # Execute reward for SERAPH
     rewardAmount_seraph = seraph_balance // 10
     seraph_reward_tx = execute_reward(
-        "reward", str(SERAPH_CONTRACT_ADDRESS), rewardAmount_seraph
+        "updateRewardIndex", str(SERAPH_CONTRACT_ADDRESS), rewardAmount_seraph
     )
     if seraph_reward_tx is None:
         print("Failed to execute reward for SERAPH")
